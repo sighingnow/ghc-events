@@ -2,6 +2,7 @@ module GHC.RTS.Events.Analysis
   ( Machine (..)
   , validate
   , validates
+  , validates'
   , simulate
   , Profile (..)
   , profile
@@ -23,6 +24,9 @@ import GHC.RTS.Events
 import Data.Map (Map)
 import qualified Data.Map as M
 import Data.Maybe (fromMaybe)
+
+import Data.Vector (Vector)
+import qualified Data.Vector as V
 
 --------------------------------------------------------------------------------
 -- | This is based on a simple finite state machine hence the names `delta`
@@ -63,6 +67,11 @@ validate m = foldl (>>=) (Right (initial m)) . map (flip (step m))
 -- state as well. For an incremental version, use `simulate`.
 validates :: Machine s i -> [i] -> [Either (s, i) s]
 validates m = scanl (>>=) (Right (initial m)) . map (flip (step m))
+
+-- | This function is similar to `validate`, but outputs each intermediary
+-- state as well. For an incremental version, use `simulate`.
+validates' :: Machine s i -> Vector i -> Vector (Either (s, i) s)
+validates' m = V.scanl (>>=) (Right (initial m)) . V.map (flip (step m))
 
 --------------------------------------------------------------------------------
 -- A Process is a list of successful values, followed by an error if one
@@ -109,6 +118,28 @@ analyse machine extract = go (initial machine)
               Nothing -> go s' is
               Just o  -> Prod o (go s' is)
     | otherwise = go s is
+
+analyse' :: Machine s i          -- ^ The machine used
+         -> (s -> i -> Maybe o)  -- ^ An extraction function that may produce output
+         -> Vector i                  -- ^ A list of input
+         -> Process (s, i) o     -- ^ A process that produces output
+analyse' machine extract = go (initial machine)
+ where
+  -- go :: s -> [i] -> Process (s, i) o
+  go s xs = go' xs (V.length xs) s 0
+
+  go' xs n s k
+    | n == k = Done
+    | final machine s = Done
+    | i <- xs V.! k
+    , alpha machine i =
+        case delta machine s i of
+          Nothing -> Fail (s, i)
+          Just s' ->
+            case extract s i of
+              Nothing -> go' xs n s' (k+1)
+              Just o  -> Prod o (go' xs n s' (k+1))
+    | otherwise = go' xs n s (k+1)
 
 -- | Machines sometimes need to operate on coarser input than they are defined
 -- for. This function takes a function that refines input and a machine that
@@ -224,10 +255,10 @@ profileRouted :: (Ord k, Ord s, Eq s, Eq r)
               -> Machine r i
               -> (r -> i -> Maybe k)
               -> (i -> Timestamp)
-              -> [i]
+              -> Vector i
               -> Process ((Map k (Profile s), r), i) (k, (s, Timestamp, Timestamp))
 profileRouted machine router index timer =
-  analyse (routeM router index (profileM timer machine))
+  analyse' (routeM router index (profileM timer machine))
           (extractRouted (extractProfile timer) index)
 
 extractRouted :: Ord k => (s -> i -> Maybe o) -> (r -> i -> Maybe k) -> ((Map k s, r)  -> i -> Maybe (k, o))

@@ -47,7 +47,7 @@ module GHC.RTS.Events (
        serialiseEventLog,
 
        -- * Utilities
-       CapEvent(..), sortEvents,
+       CapEvent(..), sortEvents, sortEvents',
        buildEventTypeMap,
 
        -- * Printing
@@ -85,6 +85,12 @@ import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.Builder as TB
 import qualified Data.Text.Lazy.Builder.Int as TB
 import qualified Data.Text.Lazy.IO as TL
+import Control.Monad.ST
+import Data.Vector (Vector)
+import Data.Vector.Mutable (MVector)
+import qualified Data.Vector as V
+import qualified Data.Vector.Mutable as MV
+import qualified Data.Vector.Algorithms.Tim as V
 import qualified Data.Vector.Unboxed as VU
 import Data.Word
 import System.IO
@@ -146,7 +152,7 @@ serialiseEventLog el@(EventLog _ (Data events)) =
   where
     eventsMap = capSplitEvents events
     blockedEventsMap = IM.mapWithKey addBlockMarker eventsMap
-    blockedEl = el{dat = Data blockedEvents}
+    blockedEl = el{dat = Data (V.fromList blockedEvents)}
     blockedEvents = IM.foldr (++) [] blockedEventsMap
 
 -- Gets the Capability of an event in numeric form
@@ -158,8 +164,9 @@ getIntCap Event{evCap = cap} =
 
 -- Creates an IntMap of the events with capability number as the key.
 -- Key -1 indicates global (capless) event
-capSplitEvents :: [Event] -> IM.IntMap [Event]
-capSplitEvents evts = capSplitEvents' evts IM.empty
+capSplitEvents :: Vector Event -> IM.IntMap [Event]
+capSplitEvents = V.foldl' (\im e -> IM.insertWith (++) (getIntCap e) [e] im) IM.empty
+-- capSplitEvents evts = capSplitEvents' evts IM.empty
 
 capSplitEvents' :: [Event] -> IM.IntMap [Event] -> IM.IntMap [Event]
 capSplitEvents' evts imap =
@@ -184,6 +191,13 @@ addBlockMarker cap evts =
 -- Utilities
 sortEvents :: [Event] -> [Event]
 sortEvents = sortBy (compare `on` evTime)
+
+sortEvents' :: Vector Event -> Vector Event
+sortEvents' vec = runST $ do
+  mvec <- MV.new (V.length vec)
+  V.copy mvec vec
+  V.sortBy (compare `on` evTime) mvec
+  V.freeze mvec
 
 buildEventTypeMap :: [EventType] -> IntMap EventType
 buildEventTypeMap etypes =
@@ -521,7 +535,7 @@ buildEventLog (EventLog (Header ets) (Data es)) =
   <> foldMap (\ev -> buildEvent imap ev <> "\n") sorted
   where
     imap = buildEventTypeMap ets
-    sorted = sortEvents es
+    sorted = sortEvents' es
 
 ppEventType :: EventType -> String
 ppEventType = TL.unpack . TB.toLazyText . buildEventType

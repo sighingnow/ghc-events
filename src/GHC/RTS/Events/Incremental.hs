@@ -28,6 +28,9 @@ import GHC.RTS.EventParserUtils
 import GHC.RTS.EventTypes
 import GHC.RTS.Events.Binary
 
+import Data.Vector (Vector (..))
+import qualified Data.Vector as V
+
 #define EVENTLOG_CONSTANTS_ONLY
 #include "EventLogFormat.h"
 
@@ -124,10 +127,10 @@ readHeader = go $ Left decodeHeader
 --
 -- Note that it doesn't fail if it consumes all input in the middle of decoding
 -- of an event.
-readEvents :: Header -> BL.ByteString -> ([Event], Maybe String)
+readEvents :: Header -> BL.ByteString -> (Vector Event, Maybe String)
 readEvents header = f . break isLeft . go (decodeEvents header)
   where
-    f (rs, ls) = (rights rs, listToMaybe (lefts ls))
+    f (rs, ls) = (V.fromList (rights rs), listToMaybe (lefts ls))
 #if !MIN_VERSION_base(4, 7, 0)
     isLeft (Left _) = True
     isLeft _ = False

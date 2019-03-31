@@ -35,7 +35,7 @@ mergeEventLogs (EventLog h1 (Data xs)) (EventLog h2 (Data ys)) =
       m = M.unionWith combine m1 m2
       h = Header $ M.elems m
   in h == h `seq`  -- Detect inconsistency ASAP.
-     EventLog h . Data . mergeOn evTime xs $ shift (maxVars xs) ys
+     EventLog h . Data $ undefined -- mergeOn evTime xs $ shift (maxVars xs) ys -- FIXME
 
 mergeOn :: Ord b => (a -> b) -> [a] -> [a] -> [a]
 mergeOn _ [] ys = ys

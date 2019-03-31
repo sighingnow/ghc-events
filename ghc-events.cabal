@@ -70,7 +70,8 @@ library
                     bytestring >= 0.10.4,
                     array      >= 0.2 && < 0.6,
                     text       >= 0.11.2.3 && < 1.3,
-                    vector     >= 0.7 && < 0.13
+                    vector     >= 0.7 && < 0.13,
+                    vector-algorithms
   exposed-modules:  GHC.RTS.Events,
                     GHC.RTS.Events.Incremental
                     GHC.RTS.Events.Merge
@@ -87,24 +88,24 @@ library
   other-extensions: FlexibleContexts, CPP
   ghc-options:      -Wall
 
-executable ghc-events
-  main-is:          GhcEvents.hs
-  build-depends:    ghc-events, base, containers
-  extensions:	    RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
+-- executable ghc-events
+--   main-is:          GhcEvents.hs
+--   build-depends:    ghc-events, base, containers
+--   extensions:	    RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
 
-test-suite test-versions
-  type:             exitcode-stdio-1.0
-  main-is:          TestVersions.hs
-  other-modules:    Utils
-  hs-source-dirs:   ., test
-  build-depends:    ghc-events, base
-  extensions:	    RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
+-- test-suite test-versions
+--   type:             exitcode-stdio-1.0
+--   main-is:          TestVersions.hs
+--   other-modules:    Utils
+--   hs-source-dirs:   ., test
+--   build-depends:    ghc-events, base
+--   extensions:	    RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
 
-test-suite write-merge
-  type:             exitcode-stdio-1.0
-  main-is:          WriteMerge.hs
-  other-modules:    Utils
-  hs-source-dirs:   ., test
-  build-depends:    ghc-events, base, bytestring
-  extensions:	    RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
-  buildable:        False
+-- test-suite write-merge
+--   type:             exitcode-stdio-1.0
+--   main-is:          WriteMerge.hs
+--   other-modules:    Utils
+--   hs-source-dirs:   ., test
+--   build-depends:    ghc-events, base, bytestring
+--   extensions:	    RecordWildCards, NamedFieldPuns, BangPatterns, PatternGuards
+--   buildable:        False

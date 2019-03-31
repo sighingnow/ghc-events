@@ -5,6 +5,7 @@ import Data.Bits
 
 import Data.Binary
 import Data.Text (Text)
+import Data.Vector (Vector)
 import qualified Data.Vector.Unboxed as VU
 
 -- EventType.
@@ -114,7 +115,7 @@ newtype Header = Header {
   } deriving (Show, Eq)
 
 data Data = Data {
-     events :: [Event]
+     events :: Vector Event
   } deriving Show
 
 data EventType =
