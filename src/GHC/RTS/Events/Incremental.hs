@@ -12,8 +12,12 @@ module GHC.RTS.Events.Incremental
   , readHeader
   , readEvents
   , readEventLog
+
+  -- * Utils
+  , getEventParsers
   ) where
 import Control.Monad
+import Data.Array
 import Data.Either
 import Data.Maybe
 import Prelude
@@ -156,6 +160,11 @@ readEventLog bytes = do
 -- | Makes a decoder with all the required parsers when given a Header
 mkEventDecoder :: Header -> G.Decoder (Maybe Event)
 mkEventDecoder header = G.runGetIncremental $ getEvent parsers
+  where parsers = EventParsers (getEventParsers header)
+
+-- | Makes a decoder with all the required parsers when given a Header
+getEventParsers :: Header -> Array Int (G.Get EventInfo)
+getEventParsers header = mkEventTypeParsers imap event_parsers
   where
     imap = IM.fromList [(fromIntegral (num t), t) | t <- eventTypes header]
     -- This test is complete, no-one has extended this event yet and all future
@@ -202,4 +211,3 @@ mkEventDecoder header = G.runGetIncremental $ getEvent parsers
         , perfParsers
         , heapProfParsers
         ]
-    parsers = EventParsers $ mkEventTypeParsers imap event_parsers

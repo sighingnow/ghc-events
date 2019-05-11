@@ -57,6 +57,10 @@ module GHC.RTS.Events (
        ppEventLog, ppEventType,
        ppEvent, buildEvent, buildEvent',
 
+      -- * Binary
+      eventTypeNum,
+      putEventSpec,
+
        -- * Perf events
        nEVENT_PERF_NAME, nEVENT_PERF_COUNTER, nEVENT_PERF_TRACEPOINT,
        sz_perf_num, sz_kernel_tid,

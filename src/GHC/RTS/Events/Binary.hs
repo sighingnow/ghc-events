@@ -18,6 +18,8 @@ module GHC.RTS.Events.Binary
   , putEventLog
   , putHeader
   , putEvent
+  , eventTypeNum
+  , putEventSpec
 
   -- * Perf events
   , nEVENT_PERF_NAME
